@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - EXTERNAL_MODE=stub
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+    depends_on:
+      - firestore
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud emulators firestore start --host-port=0.0.0.0:8080
+    ports:
+      - "8081:8080"

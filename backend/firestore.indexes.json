@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "notification_enabled", "order": "ASCENDING"},
+        {"fieldPath": "notification_time", "order": "ASCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
