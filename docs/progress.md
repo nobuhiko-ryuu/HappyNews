@@ -1,118 +1,94 @@
-# Claude Code 進捗報告テンプレ（ハッピーニュース / Android）
-> 目的：Claude Code ⇄ ChatGPT ⇄ のぶこふ で状況をズレなく共有する  
-> ルール：事実のみ（推測は「推測」と明記）。リンクは可能な限り添付。
+# Claude Code 進捗報告（ハッピーニュース / Android）
+最終更新: 2026-02-28
 
 ---
 
 ## 0. 今回の報告サマリ（3行）
-- 何を完了したか：
-- 何が未完了か：
-- いま一番のブロッカー/判断待ち：
+- 完了: Phase 0（TEST-001~003）+ M1 Backend（BE-010~029 / PR #3 マージ済み）
+- 進行中: M1 Android（AD-001~011）- バックグラウンドエージェント実行中
+- ブロッカー: なし（前セッションはToken上限で中断、コードは保持されていた）
 
 ---
 
-## 1. 対応したタスク一覧（チェック式）
-> `IMPLEMENTATION_TASKS.md` のIDで記載（例：BE-023, AD-010, TEST-011）
+## 1. 対応したタスク一覧
 
 ### ✅ 完了（Done）
-- [ ] TASK-ID：要約（PR/コミット/変更概要）
-- [ ] TASK-ID：要約
+
+- **Task #1** (Phase 0): GitHub リポジトリ作成 + プロジェクト基本構造
+  - https://github.com/nobuhiko-ryuu/HappyNews (private)
+
+- **Task #2** (Phase 0 / TEST-001~003): External Clients インタフェース + DI + Stub
+  - PR #1: feat/external-interface-di-stub → merged
+  - PR #2: fix/interface-quality-issues → merged
+  - テスト: 8 PASS（外部依存ゼロ）
+
+- **Task #3** (M1 Backend / BE-010~029): Backend API 実装
+  - PR #3: feat/m1-backend-api → merged
+  - 実装内容:
+    - BE-010~015: Firestoreスキーマ・セキュリティルール・インデックス・シードデータ（30ソース）
+    - BE-020: FastAPI + エラーハンドリング + リクエストIDミドルウェア
+    - BE-021: JST day_key ユーティリティ
+    - BE-022: GET /v1/days/latest（7日フォールバック）
+    - BE-023: GET /v1/days/{day_key}/articles（ソート・Cache-Control）
+    - BE-024: GET /v1/articles/{id}
+    - BE-025: bookmarks CRUD
+    - BE-026: settings PUT（notification_enabled/time/mute_words）
+    - BE-027: Cache-Control ヘッダー（当日5分、過去日24h）
+    - BE-028: 簡易レート制限（60 req/min per UID/IP）
+    - BE-029: 構造ログ（request_id）
+  - テスト: 8 PASS（test_interfaces.py）
+  - 注意: BE-001~006（GCP基盤）は手動セットアップ必要
 
 ### 🟡 進行中（In Progress）
-- [ ] TASK-ID：現状 / 残作業 / 見積り（大雑把でOK）
 
-### 🔴 ブロック（Blocked）
-- [ ] TASK-ID：ブロック理由 / 必要な判断（のぶこふ or ChatGPT）/ 代替案
-
----
-
-## 2. 変更点（実装内容の要約）
-### 2.1 追加したもの
-- 例：新しいエンドポイント、ジョブ、画面、設定項目
-
-### 2.2 変更したもの
-- 例：既存APIのレスポンス変更、スキーマ変更、仕様変更（あれば理由も）
-
-### 2.3 削除したもの
-- 例：不要コード、暫定実装の撤去
+- **Task #4** (M1 Android / AD-001~011): Android Agent が実行中
+  - ブランチ: feat/m1-android-foundation
+  - 対象: Android プロジェクト基盤（Hilt/Retrofit/Room/Coil）+ SC-01 Today一覧 + SC-02 詳細
 
 ---
 
-## 3. 仕様整合性チェック（重要）
-以下と矛盾がないかを、Claude Code視点で確認して結果を記入：
-- 外部設計書（MVP確定版）
-- アーキ設計書（MVP確定版）
-- IMPLEMENTATION_TASKS.md（MVP確定版）
+## 2. エージェント構成
 
-### 3.1 確認結果
-- ✅ 矛盾なし / 🟡 軽微なズレあり / 🔴 仕様と不一致
-- ズレがある場合：どのドキュメントのどの章とズレたか（具体的に）
+| エージェント | 役割 | 現在の担当タスク |
+|---|---|---|
+| Orchestrator（本エージェント） | タスク管理・仕様整合・Phase 0 実行 | M1 Android 監視 |
+| Backend Agent | BE-001~062 | M1 完了（PR #3 マージ済み） |
+| Android Agent（バックグラウンド） | AD-001~023 | M1: AD-001~011 実行中 |
 
 ---
 
-## 4. テスト結果（コスパ/タイパ戦略に沿う）
-### 4.1 ローカル/CI（外部ゼロ）
-- ユニットテスト：✅/❌（件数・失敗概要）
-- Emulator統合テスト：✅/❌（対象：TEST-010〜012）
-- Android UIスモーク：✅/❌（対象：TEST-040〜042）
+## 3. GitHub リポジトリ状況
 
-### 4.2 dev/Nightly（実弾スモーク：上限固定）
-- LLM実弾スモーク（TEST-030）：✅/❌（回数/入力件数/主な差分）
-- 収集実弾スモーク（TEST-032）：✅/❌（ソース数/失敗はsoft failか）
-- 通知スモーク（必要時）：✅/❌（端末/DeepLink）
-
-### 4.3 失敗の詳細
-- エラーログ抜粋（短く）
-- 再現手順（最短）
-- 暫定回避策
+- URL: https://github.com/nobuhiko-ryuu/HappyNews
+- ブランチ: main
+- マージ済み PR:
+  - PR #1: feat: external client interfaces + DI + stubs (TEST-001~003)
+  - PR #2: fix: interface code quality issues (C-1, C-2, I-1, I-4)
+  - PR #3: feat: M1 Backend - Firestore schema + API endpoints (BE-010~029)
 
 ---
 
-## 5. デプロイ/実行方法（再現性のため必須）
-### 5.1 実行コマンド（コピペで動く形）
-- API起動：
-- バッチ（day_key指定 / dry_run）：
-- 通知ジョブ（時刻スロット指定があれば）：
-- Emulator起動（Firestore）：
-- Nightlyスモーク起動：
+## 4. マイルストーン進捗
 
-### 5.2 環境変数・Secrets
-- 新規追加した環境変数：
-- 参照するSecret名：
-- `EXTERNAL_MODE`（stub/real）の設定：
-
----
-
-## 6. 依存・影響範囲（壊れやすいところ）
-- Firestoreスキーマ変更：あり/なし（ある場合：コレクション/フィールド）
-- API互換性：破壊的変更あり/なし
-- Android側への影響：あり/なし（どの画面/どの挙動）
-- コスト影響：あり/なし（LLM呼び出し増、転送量増など）
+| マイルストーン | 状態 | 備考 |
+|---|---|---|
+| Phase 0: 外部依存分離 | ✅ 完了 | TEST-001~003 |
+| M1: API read-only + Android一覧/詳細 | 🟡 進行中 | BE完了・Android実行中 |
+| M2: ブックマーク + 設定 + キャッシュ | ⏳ 待機中 | M1 完了後 |
+| M3: 日次バッチ 20本/日 | ⏳ 待機中 | |
+| M4: 通知 + DeepLink | ⏳ 待機中 | |
+| M5: 監視/アラート + リリース準備 | ⏳ 待機中 | |
+| M6: CI 完全化 | ⏳ 待機中 | |
 
 ---
 
-## 7. 既知の問題（Known Issues）
-- KI-01：内容 / 影響 / 再現率 / 暫定対応
-- KI-02：
+## 5. 次にやること（M1 Android完了後）
+
+1. Task #4 M1 Android → スペックレビュー → コード品質レビュー → Task #6 M2 Android 着手
+2. Task #5 M2 Backend（BE-025~029 は M1 で実装済み、追加タスクなし） → Task #7 M3 Backend 着手
+3. M3 Backend と M2 Android を並列実行
 
 ---
 
-## 8. 次にやること（Next）
-### 8.1 次スプリント候補（優先順）
-- [ ] TASK-ID：理由（ブロッカー解消/価値/リスク）
-
-### 8.2 判断・承認が必要な事項（のぶこふ向け）
-- Decision-01：選択肢 / 推奨 / 影響
-
-### 8.3 レビュー依頼（ChatGPT向け）
-- Review-01：見てほしいファイル/PR/観点（例：外部設計との整合、テスト戦略準拠）
-
----
-
-## 9. 添付リンク（必須）
-- PRリンク：
-- 主要コミット：
-- CI結果（URL or スクショ）：
-- 動作ログ/スクショ（あれば）：
-
----
+## 6. Token 使用状況
+現在: 通常範囲内（80% 未達）
