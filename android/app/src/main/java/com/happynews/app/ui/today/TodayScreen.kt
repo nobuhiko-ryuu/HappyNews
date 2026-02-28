@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -58,19 +59,32 @@ fun TodayScreen(
             )
             is TodayViewModel.UiState.Empty -> EmptyContent()
             is TodayViewModel.UiState.Success -> {
-                PullToRefreshBox(
-                    modifier = Modifier.padding(padding),
-                    state = pullState,
-                    isRefreshing = false,
-                    onRefresh = viewModel::loadArticles,
-                ) {
-                    LazyColumn {
-                        items(state.result.articles, key = { it.id }) { article ->
-                            ArticleCard(
-                                article = article,
-                                onClick = { onArticleClick(article.id) },
-                                onBookmarkToggle = { viewModel.toggleBookmark(article.id) },
+                Column(modifier = Modifier.padding(padding)) {
+                    if (state.fromCache) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                "オフライン表示（キャッシュ）",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                             )
+                        }
+                    }
+                    PullToRefreshBox(
+                        state = pullState,
+                        isRefreshing = false,
+                        onRefresh = viewModel::loadArticles,
+                    ) {
+                        LazyColumn {
+                            items(state.result.articles, key = { it.id }) { article ->
+                                ArticleCard(
+                                    article = article,
+                                    onClick = { onArticleClick(article.id) },
+                                    onBookmarkToggle = { viewModel.toggleBookmark(article.id) },
+                                )
+                            }
                         }
                     }
                 }

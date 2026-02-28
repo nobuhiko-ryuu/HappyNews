@@ -1,5 +1,6 @@
 package com.happynews.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,9 +15,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -29,54 +31,80 @@ data class BottomNavItem(val route: String, val icon: ImageVector, val label: St
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val _deepLinkRoute = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleDeepLink(intent)
         enableEdgeToEdge()
         setContent {
             HappyNewsTheme {
-                MainScreen()
+                MainScreen(
+                    initialDeepLink = _deepLinkRoute.value,
+                    onDeepLinkConsumed = { _deepLinkRoute.value = null },
+                )
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleDeepLink(intent)
+    }
+
+    private fun handleDeepLink(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme == "happynews" && uri.host == "today") {
+            _deepLinkRoute.value = Screen.Today.route
         }
     }
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    initialDeepLink: String? = null,
+    onDeepLinkConsumed: () -> Unit = {},
+) {
     val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val entry by navController.currentBackStackEntryAsState()
+    val currentRoute = entry?.destination?.route
 
-    val bottomItems = listOf(
+    val tabs = listOf(
         BottomNavItem(Screen.Today.route, Icons.Default.Home, "ホーム"),
         BottomNavItem(Screen.Bookmarks.route, Icons.Default.Bookmark, "保存"),
         BottomNavItem(Screen.Settings.route, Icons.Default.Settings, "設定"),
     )
-    val showBottomBar = currentRoute in bottomItems.map { it.route }
 
-    Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar {
-                    bottomItems.forEach { item ->
-                        NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) },
-                            selected = currentRoute == item.route,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                        )
-                    }
+    LaunchedEffect(initialDeepLink) {
+        initialDeepLink?.let { route ->
+            navController.navigate(route) {
+                popUpTo(navController.graph.findStartDestination().id) { inclusive = false }
+                launchSingleTop = true
+            }
+            onDeepLinkConsumed()
+        }
+    }
+
+    Scaffold(bottomBar = {
+        if (currentRoute in tabs.map { it.route }) {
+            NavigationBar {
+                tabs.forEach { item ->
+                    NavigationBarItem(
+                        icon = { Icon(item.icon, item.label) },
+                        label = { Text(item.label) },
+                        selected = currentRoute == item.route,
+                        onClick = {
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                    )
                 }
             }
         }
-    ) { _ ->
+    }) { _ ->
         HappyNewsNavHost(navController = navController)
     }
 }

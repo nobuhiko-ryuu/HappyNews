@@ -19,7 +19,7 @@ class TodayViewModel @Inject constructor(
 
     sealed class UiState {
         object Loading : UiState()
-        data class Success(val result: ArticleListResult) : UiState()
+        data class Success(val result: ArticleListResult, val fromCache: Boolean = false) : UiState()
         data class Error(val message: String) : UiState()
         object Empty : UiState()
     }
@@ -39,7 +39,15 @@ class TodayViewModel @Inject constructor(
                 _uiState.value = if (result.articles.isEmpty()) UiState.Empty
                 else UiState.Success(result)
             } catch (e: Exception) {
-                _uiState.value = UiState.Error(e.message ?: "取得に失敗しました")
+                // オフライン時: キャッシュから表示を試みる
+                try {
+                    val cachedResult = repository.getCachedTodayArticles()
+                    _uiState.value = if (cachedResult.articles.isEmpty())
+                        UiState.Error(e.message ?: "取得に失敗しました")
+                    else UiState.Success(cachedResult.copy(fromCache = true))
+                } catch (_: Exception) {
+                    _uiState.value = UiState.Error(e.message ?: "取得に失敗しました")
+                }
             }
         }
     }

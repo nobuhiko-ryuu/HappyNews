@@ -47,4 +47,5 @@ data class SettingsRequest(
     @SerializedName("notification_enabled") val notificationEnabled: Boolean? = null,
     @SerializedName("notification_time") val notificationTime: Int? = null,
     @SerializedName("mute_words") val muteWords: List<String>? = null,
+    @SerializedName("fcm_token") val fcmToken: String? = null,
 )

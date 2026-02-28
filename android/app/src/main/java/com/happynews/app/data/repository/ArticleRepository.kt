@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-data class ArticleListResult(val dayKey: String, val articles: List<Article>)
+data class ArticleListResult(val dayKey: String, val articles: List<Article>, val fromCache: Boolean = false)
 
 @Singleton
 class ArticleRepository @Inject constructor(
@@ -29,6 +29,12 @@ class ArticleRepository @Inject constructor(
 
     fun getCachedArticles(dayKey: String): Flow<List<Article>> =
         dao.getByDayKey(dayKey).map { list -> list.map { it.toDomain() } }
+
+    suspend fun getCachedTodayArticles(): ArticleListResult {
+        val today = com.happynews.app.utils.DayKeyUtil.todayJst()
+        val cached = dao.getByDayKeyOnce(today)
+        return ArticleListResult(dayKey = today, articles = cached.map { it.toDomain() }, fromCache = true)
+    }
 
     suspend fun getArticle(id: String): Article {
         val cached = dao.getById(id)
