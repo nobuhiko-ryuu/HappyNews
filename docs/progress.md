@@ -4,91 +4,95 @@
 ---
 
 ## 0. 今回の報告サマリ（3行）
-- 完了: Phase 0（TEST-001~003）+ M1 Backend（BE-010~029 / PR #3 マージ済み）
-- 進行中: M1 Android（AD-001~011）- バックグラウンドエージェント実行中
-- ブロッカー: なし（前セッションはToken上限で中断、コードは保持されていた）
+- 完了: 全マイルストーン M1〜M6 + Phase 0（PR #1〜#9 マージ済み）
+- 進行中: なし
+- ブロッカー: なし（GCP基盤 BE-001~006 のみ手動セットアップ必要）
 
 ---
 
-## 1. 対応したタスク一覧
+## 1. 完了タスク一覧 ✅
 
-### ✅ 完了（Done）
+### Phase 0（TEST-001~003）
+- **PR #1**: feat/external-interface-di-stub → merged
+- **PR #2**: fix/interface-quality-issues → merged
+- テスト: 8 PASS（外部依存ゼロ）
 
-- **Task #1** (Phase 0): GitHub リポジトリ作成 + プロジェクト基本構造
-  - https://github.com/nobuhiko-ryuu/HappyNews (private)
+### M1: API read-only + Android 一覧/詳細
+- **PR #3**: feat/m1-backend-api → merged（BE-010~029）
+  - Firestoreスキーマ・セキュリティルール・インデックス
+  - FastAPI エンドポイント（days/articles/users）
+  - レート制限・構造ログ・Cache-Control
+- **PR #4**: feat/m1-android-foundation → merged（AD-001~011）
+  - Android プロジェクト基盤（Hilt/Retrofit/Room/Coil）
+  - SC-01 Today一覧 / SC-02 詳細画面
 
-- **Task #2** (Phase 0 / TEST-001~003): External Clients インタフェース + DI + Stub
-  - PR #1: feat/external-interface-di-stub → merged
-  - PR #2: fix/interface-quality-issues → merged
-  - テスト: 8 PASS（外部依存ゼロ）
+### M2: ブックマーク + 設定 + キャッシュ
+- **PR #5**: feat/m2-android → merged（AD-003, AD-012~015）
+  - SC-03 ブックマーク / SC-04 設定 / SC-05 通知設定 / SC-06 法的情報
+  - DataStore バックアップ設定 / BottomNavigation
 
-- **Task #3** (M1 Backend / BE-010~029): Backend API 実装
-  - PR #3: feat/m1-backend-api → merged
-  - 実装内容:
-    - BE-010~015: Firestoreスキーマ・セキュリティルール・インデックス・シードデータ（30ソース）
-    - BE-020: FastAPI + エラーハンドリング + リクエストIDミドルウェア
-    - BE-021: JST day_key ユーティリティ
-    - BE-022: GET /v1/days/latest（7日フォールバック）
-    - BE-023: GET /v1/days/{day_key}/articles（ソート・Cache-Control）
-    - BE-024: GET /v1/articles/{id}
-    - BE-025: bookmarks CRUD
-    - BE-026: settings PUT（notification_enabled/time/mute_words）
-    - BE-027: Cache-Control ヘッダー（当日5分、過去日24h）
-    - BE-028: 簡易レート制限（60 req/min per UID/IP）
-    - BE-029: 構造ログ（request_id）
-  - テスト: 8 PASS（test_interfaces.py）
-  - 注意: BE-001~006（GCP基盤）は手動セットアップ必要
+### M3: 日次バッチ 20本/日
+- **PR #6**: feat/m3-backend-batch → merged（BE-030~043）
+  - 収集→フィルタ→LLM分類→ランク→要約→Publish 全ステップ
+  - テスト: 19 PASS（外部依存ゼロ）
 
-### 🟡 進行中（In Progress）
+### M4: FCM通知 + DeepLink
+- **PR #7**: feat/m4-backend-notify → merged（BE-050~055）
+  - FCM通知ジョブ（毎時バッチ・対象抽出・ペイロード・ログ）
+  - テスト: 7 PASS
+- **PR #8**: feat/m4-android-m3-android → merged（AD-005, AD-020~023）
+  - DeepLink（happynews://today → Today画面）
+  - FCMトークン登録（onNewToken → settingsRepository）
+  - B案非機能要件: オフラインキャッシュ・画像ガード・通信量ログ
 
-- **Task #4** (M1 Android / AD-001~011): Android Agent が実行中
-  - ブランチ: feat/m1-android-foundation
-  - 対象: Android プロジェクト基盤（Hilt/Retrofit/Room/Coil）+ SC-01 Today一覧 + SC-02 詳細
+### M5: 監視/アラート + リリース準備
+- **PR #9**: feat/m5-m6-monitoring-ci → merged（BE-060~062, OP-001~005, TEST-050~052）
+  - StructuredLogger（JSON stdout）
+  - Cloud Monitoring アラートポリシー・ダッシュボード定義
+  - Google Play ストア掲載情報
+  - 日次運用手順書・ロールバック手順書
+
+### M6: CI 完全化
+- GitHub Actions CI（PR毎: backend pytest + android build）
+- Nightly smoke（JST 05:00: EXTERNAL_MODE=real）
+- PR テンプレート
 
 ---
 
-## 2. エージェント構成
+## 2. マイルストーン進捗
 
-| エージェント | 役割 | 現在の担当タスク |
+| マイルストーン | 状態 | PR |
 |---|---|---|
-| Orchestrator（本エージェント） | タスク管理・仕様整合・Phase 0 実行 | M1 Android 監視 |
-| Backend Agent | BE-001~062 | M1 完了（PR #3 マージ済み） |
-| Android Agent（バックグラウンド） | AD-001~023 | M1: AD-001~011 実行中 |
+| Phase 0: 外部依存分離 | ✅ 完了 | #1, #2 |
+| M1: API read-only + Android一覧/詳細 | ✅ 完了 | #3, #4 |
+| M2: ブックマーク + 設定 + キャッシュ | ✅ 完了 | #5 |
+| M3: 日次バッチ 20本/日 | ✅ 完了 | #6 |
+| M4: 通知 + DeepLink | ✅ 完了 | #7, #8 |
+| M5: 監視/アラート + リリース準備 | ✅ 完了 | #9 |
+| M6: CI 完全化 | ✅ 完了 | #9 |
 
 ---
 
-## 3. GitHub リポジトリ状況
+## 3. 手動セットアップが必要な項目（GCP基盤）
+
+BE-001~006 は手動作業:
+1. GCP プロジェクト作成 + 請求有効化
+2. Firestore データベース作成（asia-northeast1）
+3. Cloud Run サービス / ジョブ デプロイ
+4. Cloud Scheduler 設定（バッチ毎日 JST 06:00、通知毎時）
+5. Secret Manager にシークレット登録（OPENAI_API_KEY 等）
+6. Firebase プロジェクト設定 + google-services.json 配置
+7. `gcloud monitoring alert-policies create` で monitoring/*.yaml 適用
+
+---
+
+## 4. GitHub リポジトリ状況
 
 - URL: https://github.com/nobuhiko-ryuu/HappyNews
 - ブランチ: main
-- マージ済み PR:
-  - PR #1: feat: external client interfaces + DI + stubs (TEST-001~003)
-  - PR #2: fix: interface code quality issues (C-1, C-2, I-1, I-4)
-  - PR #3: feat: M1 Backend - Firestore schema + API endpoints (BE-010~029)
+- マージ済み PR: #1〜#9（全完了）
 
 ---
 
-## 4. マイルストーン進捗
-
-| マイルストーン | 状態 | 備考 |
-|---|---|---|
-| Phase 0: 外部依存分離 | ✅ 完了 | TEST-001~003 |
-| M1: API read-only + Android一覧/詳細 | 🟡 進行中 | BE完了・Android実行中 |
-| M2: ブックマーク + 設定 + キャッシュ | ⏳ 待機中 | M1 完了後 |
-| M3: 日次バッチ 20本/日 | ⏳ 待機中 | |
-| M4: 通知 + DeepLink | ⏳ 待機中 | |
-| M5: 監視/アラート + リリース準備 | ⏳ 待機中 | |
-| M6: CI 完全化 | ⏳ 待機中 | |
-
----
-
-## 5. 次にやること（M1 Android完了後）
-
-1. Task #4 M1 Android → スペックレビュー → コード品質レビュー → Task #6 M2 Android 着手
-2. Task #5 M2 Backend（BE-025~029 は M1 で実装済み、追加タスクなし） → Task #7 M3 Backend 着手
-3. M3 Backend と M2 Android を並列実行
-
----
-
-## 6. Token 使用状況
-現在: 通常範囲内（80% 未達）
+## 5. Token 使用状況
+現在: 通常範囲内
