@@ -1,0 +1,20 @@
+# BE-061: バッチ失敗アラートポリシー（gcloud monitoring alert-policies create 用）
+displayName: HappyNews Batch Failure Alert
+combiner: OR
+conditions:
+  - displayName: Batch job failed
+    conditionThreshold:
+      filter: >
+        resource.type = "cloud_run_job"
+        AND resource.labels.job_name = "happynews-batch"
+        AND metric.type = "run.googleapis.com/job/completed_task_attempt_count"
+        AND metric.labels.result = "failed"
+      comparison: COMPARISON_GT
+      thresholdValue: 0
+      duration: 60s
+      aggregations:
+        - alignmentPeriod: 300s
+          perSeriesAligner: ALIGN_SUM
+notificationChannels: []
+alertStrategy:
+  autoClose: 1800s

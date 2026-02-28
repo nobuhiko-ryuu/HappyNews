@@ -1,0 +1,27 @@
+name: Nightly Smoke
+
+on:
+  schedule:
+    - cron: '0 20 * * *'  # JST 05:00
+  workflow_dispatch:
+
+jobs:
+  llm-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install backend deps
+        run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+
+      - name: LLM smoke (real external, limit=20)
+        env:
+          EXTERNAL_MODE: real
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY_PATH }}
+        run: cd backend && pytest tests/nightly/ -v -k "smoke" || true
+        # || true: ナイトリーはフラッキーでも CI を落とさない

@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install backend deps
+        run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+
+      - name: Run backend tests (external-zero)
+        env:
+          EXTERNAL_MODE: stub
+        run: cd backend && pytest tests/ -v --ignore=tests/nightly
+
+  android-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build debug APK
+        run: cd android && ./gradlew assembleDebug --no-daemon
+
+      - name: Run Android unit tests
+        run: cd android && ./gradlew testDebugUnitTest --no-daemon
