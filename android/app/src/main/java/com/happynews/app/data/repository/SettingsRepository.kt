@@ -64,4 +64,10 @@ class SettingsRepository @Inject constructor(
             prefs[muteWordsKey] = current.filter { it != word }.joinToString(",")
         }
     }
+
+    suspend fun updateFcmToken(token: String) {
+        val fcmTokenKey = androidx.datastore.preferences.core.stringPreferencesKey("fcm_token")
+        context.dataStore.edit { it[fcmTokenKey] = token }
+        runCatching { api.updateSettings(SettingsRequest(fcmToken = token)) }
+    }
 }

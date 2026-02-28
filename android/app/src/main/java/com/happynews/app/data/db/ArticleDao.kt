@@ -11,6 +11,9 @@ interface ArticleDao {
     @Query("SELECT * FROM articles WHERE dayKey = :dayKey ORDER BY happyScore DESC, publishedAt DESC")
     fun getByDayKey(dayKey: String): Flow<List<ArticleEntity>>
 
+    @Query("SELECT * FROM articles WHERE dayKey = :dayKey ORDER BY happyScore DESC, publishedAt DESC")
+    suspend fun getByDayKeyOnce(dayKey: String): List<ArticleEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(articles: List<ArticleEntity>)
 
