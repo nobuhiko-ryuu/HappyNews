@@ -68,7 +68,7 @@ async def collect_candidates(
                 "excerpt": article.excerpt[:500] if article.excerpt else "",
                 "published_at": article.published_at.isoformat() if article.published_at else None,
                 "collected_at": now_utc.isoformat(),
-                "ttl_delete_at": (now_utc + timedelta(days=7)).isoformat(),
+                "ttl_delete_at": now_utc + timedelta(days=7),  # Firestore TTL用: datetime型で保存
                 "thumbnail_url": article.thumbnail_url,
                 "lang": source.get("language_hint", "en"),
                 "rule_filtered": False,

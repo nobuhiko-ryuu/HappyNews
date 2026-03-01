@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, field_validator
 from typing import Optional
 from app.db.firestore_client import get_db
@@ -22,14 +22,14 @@ class SettingsUpdate(BaseModel):
         return v
 
 
-def _require_uid(x_uid: str = Header(..., alias="X-Uid")) -> str:
-    if not x_uid:
+def _require_uid(x_uid: str = Header("", alias="X-Uid")) -> str:
+    if not x_uid or not x_uid.strip():
         raise HTTPException(status_code=401, detail="X-Uid header required")
     return x_uid
 
 
 @router.get("/users/me/bookmarks")
-async def get_bookmarks(uid: str = Header(..., alias="X-Uid")):
+async def get_bookmarks(uid: str = Depends(_require_uid)):
     db = get_db()
     docs = db.collection("users").document(uid).collection("bookmarks").stream()
     bookmarks = []
@@ -40,7 +40,7 @@ async def get_bookmarks(uid: str = Header(..., alias="X-Uid")):
 
 
 @router.post("/users/me/bookmarks/{article_id}", status_code=201)
-async def add_bookmark(article_id: str, uid: str = Header(..., alias="X-Uid")):
+async def add_bookmark(article_id: str, uid: str = Depends(_require_uid)):
     db = get_db()
     article = await db.collection("articles").document(article_id).get()
     if not article.exists:
@@ -53,14 +53,14 @@ async def add_bookmark(article_id: str, uid: str = Header(..., alias="X-Uid")):
 
 
 @router.delete("/users/me/bookmarks/{article_id}", status_code=204)
-async def remove_bookmark(article_id: str, uid: str = Header(..., alias="X-Uid")):
+async def remove_bookmark(article_id: str, uid: str = Depends(_require_uid)):
     db = get_db()
     await (db.collection("users").document(uid)
              .collection("bookmarks").document(article_id).delete())
 
 
 @router.put("/users/me/settings")
-async def update_settings(settings: SettingsUpdate, uid: str = Header(..., alias="X-Uid")):
+async def update_settings(settings: SettingsUpdate, uid: str = Depends(_require_uid)):
     db = get_db()
     update = {k: v for k, v in settings.model_dump().items() if v is not None}
     if not update:

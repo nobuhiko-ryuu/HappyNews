@@ -29,6 +29,29 @@ curl https://happynews-api-xxxx-an.a.run.app/health
 - 5xx エラー率 < 1% であること
 - レイテンシ p99 < 2000ms であること
 
+## GCP 初期セットアップ（一度のみ）
+
+### Firestore TTL ポリシー設定（candidates コレクション）
+
+`candidates` コレクションの `ttl_delete_at` フィールドに対して Firestore TTL を有効化する。
+これにより 7 日経過した候補記事が自動削除される。
+
+```bash
+# TTL ポリシーを設定（フィールド名: ttl_delete_at）
+gcloud firestore fields ttls update ttl_delete_at \
+  --collection-group=candidates \
+  --enable-ttl \
+  --project=<YOUR_PROJECT_ID>
+
+# 設定確認
+gcloud firestore fields ttls describe ttl_delete_at \
+  --collection-group=candidates \
+  --project=<YOUR_PROJECT_ID>
+```
+
+> **注意**: TTL 削除は最大 72 時間の遅延が発生することがある（Firestore 仕様）。
+> `ttl_delete_at` フィールドは `datetime` 型（ISO 文字列ではない）で保存されていること。
+
 ## 週次作業
 
 ### 新しいニュースソース追加
