@@ -9,6 +9,22 @@ logger = logging.getLogger("happynews.batch.summarize")
 _CONCURRENCY = 3  # 要約は重いので並列数を絞る
 
 
+def _format_summary(text: str, summary_rule: dict) -> str:
+    """3行要約の整形ガード: 3行に正規化し banned_phrases を除去する"""
+    # banned_phrases 除去
+    for phrase in summary_rule.get("banned_phrases", []):
+        text = text.replace(phrase, "")
+
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+    if len(lines) > 3:
+        lines = lines[:3]
+    elif len(lines) < 3:
+        lines += [""] * (3 - len(lines))
+
+    return "\n".join(lines)
+
+
 async def summarize_articles(
     articles: list[dict],
     summarizer: ArticleSummarizer,
@@ -30,7 +46,8 @@ async def summarize_articles(
                     excerpt=article.get("excerpt", ""),
                     language=article.get("lang", "en"),
                 )
-                results[i] = dict(article) | {"summary_3lines": result.summary_3lines}
+                summary = _format_summary(result.summary_3lines, summary_rule)
+                results[i] = dict(article) | {"summary_3lines": summary}
             except Exception as e:
                 logger.warning(f"Summarize failed for '{article.get('title', '')[:40]}': {e}")
                 results[i] = dict(article) | {"summary_3lines": ""}
