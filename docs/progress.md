@@ -1,10 +1,10 @@
 # Claude Code 進捗報告（ハッピーニュース / Android）
-最終更新: 2026-03-01
+最終更新: 2026-03-01（PR #11）
 
 ---
 
 ## 0. 今回の報告サマリ（3行）
-- 完了: 全マイルストーン M1〜M6 + Phase 0 + ChatGPT設計レビュー Fix 1-5（PR #1〜#10 マージ済み）
+- 完了: 全マイルストーン M1〜M6 + Phase 0 + ChatGPT設計レビュー Fix 1-5 + Fix A-F（PR #1〜#11 マージ済み）
 - 進行中: なし
 - ブロッカー: なし（GCP基盤 BE-001~006 のみ手動セットアップ必要）
 
@@ -66,6 +66,15 @@
   - Fix 5 (P1): publish.py に thumbnail_url・source_url を通す
   - 新テスト: test_api_days.py（ソート・フォールバック）, test_batch_integration.py（20本/日）
 
+### 設計レビュー Fix A-F
+- **PR #11**: fix/review-round2-a-to-f → merged
+  - Fix A (P0): CI に master ブランチを追加（push/pull_request 両方）
+  - Fix B (P0): Android 匿名ログイン完了待ち（signInAnonymously().await() 後に NavHost 表示）
+  - Fix C (P0): FCM バックグラウンド通知 deeplink（intent.extras["deeplink"] を処理）
+  - Fix D (P0): Backend 空 uid 401 拒否（全エンドポイントで Depends(_require_uid) 統一）
+  - Fix E (P1): Firestore TTL datetime 型保存 + 設定手順を ops ドキュメントに追記
+  - Fix F (P1): 3行要約の整形ガード（_format_summary: 丸め・補完・banned_phrases 除去）
+
 ---
 
 ## 2. マイルストーン進捗
@@ -99,7 +108,7 @@ BE-001~006 は手動作業:
 
 - URL: https://github.com/nobuhiko-ryuu/HappyNews
 - ブランチ: main
-- マージ済み PR: #1〜#10（全完了）
+- マージ済み PR: #1〜#11（全完了）
 
 ---
 
