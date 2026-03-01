@@ -6,11 +6,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -24,11 +28,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.happynews.app.ui.navigation.HappyNewsNavHost
@@ -40,31 +44,35 @@ import kotlinx.coroutines.tasks.await
 
 data class BottomNavItem(val route: String, val icon: ImageVector, val label: String)
 
+private sealed class AuthState {
+    object Loading : AuthState()
+    object Ready : AuthState()
+    object Failed : AuthState()
+}
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val _authReady = mutableStateOf(false)
+    private val _authState = mutableStateOf<AuthState>(AuthState.Loading)
     private val _deepLinkRoute = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleDeepLink(intent)
         enableEdgeToEdge()
-
-        // 匿名ログイン完了後に NavHost を描画する（uid空回避）
-        lifecycleScope.launch {
-            ensureAnonymousAuth()
-            _authReady.value = true
-        }
+        startAuth()
 
         setContent {
             HappyNewsTheme {
-                if (_authReady.value) {
-                    MainScreen(
+                when (_authState.value) {
+                    AuthState.Ready -> MainScreen(
                         initialDeepLink = _deepLinkRoute.value,
                         onDeepLinkConsumed = { _deepLinkRoute.value = null },
                     )
-                } else {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    AuthState.Failed -> AuthFailedScreen(onRetry = { startAuth() })
+                    AuthState.Loading -> Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         CircularProgressIndicator()
                     }
                 }
@@ -75,6 +83,19 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleDeepLink(intent)
+    }
+
+    private fun startAuth() {
+        _authState.value = AuthState.Loading
+        lifecycleScope.launch {
+            val auth = Firebase.auth
+            if (auth.currentUser != null) {
+                _authState.value = AuthState.Ready
+                return@launch
+            }
+            val result = runCatching { auth.signInAnonymously().await() }
+            _authState.value = if (result.isSuccess) AuthState.Ready else AuthState.Failed
+        }
     }
 
     private fun handleDeepLink(intent: Intent?) {
@@ -94,16 +115,15 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * 匿名ログインを保証する。
- * - すでにサインイン済みの場合は即リターン（オフライン再起動時も継続）
- * - 未サインインなら signInAnonymously() を await
- * - 失敗した場合もクラッシュせず継続（APIは X-Uid="" になるが、それより先に進める）
- */
-private suspend fun ensureAnonymousAuth() {
-    val auth = Firebase.auth
-    if (auth.currentUser != null) return
-    runCatching { auth.signInAnonymously().await() }
+@Composable
+private fun AuthFailedScreen(onRetry: () -> Unit) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("接続できませんでした")
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onRetry) { Text("再試行") }
+        }
+    }
 }
 
 @Composable

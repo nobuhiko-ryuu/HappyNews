@@ -74,8 +74,27 @@ async def run_batch(
 
         # 3. LLM Classify
         classifier = get_classifier()
-        candidates = await classify_candidates(candidates, classifier, db=None if dry_run else db)
+        candidates = await classify_candidates(candidates, classifier, db=db)
         run_record["counts"]["classified"] = len([c for c in candidates if not c.get("rule_filtered")])
+
+        # 3b. LLM後 ng_categories フィルタ
+        if ng_categories:
+            for c in candidates:
+                if not c.get("rule_filtered") and c.get("llm_category") in ng_categories:
+                    c["rule_filtered"] = True
+                    c.setdefault("rule_filter_reasons", []).append(
+                        f"ng_category:{c['llm_category']}"
+                    )
+            ng_cat_filtered = sum(
+                1 for c in candidates
+                if c.get("rule_filtered") and any(
+                    r.startswith("ng_category:") for r in c.get("rule_filter_reasons", [])
+                )
+            )
+            logger.info(f"ng_category filter: {ng_cat_filtered} candidates filtered")
+            run_record["counts"]["after_ng_category_filter"] = len(
+                [c for c in candidates if not c.get("rule_filtered")]
+            )
 
         # 4. Rank & Select
         selected = rank_and_select(candidates, publish_count, per_category_max)
