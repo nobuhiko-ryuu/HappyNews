@@ -1,10 +1,10 @@
 # Claude Code 進捗報告（ハッピーニュース / Android）
-最終更新: 2026-02-28
+最終更新: 2026-03-01
 
 ---
 
 ## 0. 今回の報告サマリ（3行）
-- 完了: 全マイルストーン M1〜M6 + Phase 0（PR #1〜#9 マージ済み）
+- 完了: 全マイルストーン M1〜M6 + Phase 0 + ChatGPT設計レビュー Fix 1-5（PR #1〜#10 マージ済み）
 - 進行中: なし
 - ブロッカー: なし（GCP基盤 BE-001~006 のみ手動セットアップ必要）
 
@@ -57,6 +57,15 @@
 - Nightly smoke（JST 05:00: EXTERNAL_MODE=real）
 - PR テンプレート
 
+### ChatGPT設計レビュー Fix 1-5
+- **PR #10**: fix/chatgpt-review-p0-p1 → merged
+  - Fix 1 (P0): NotificationPayload.deeplink + send_multicast(tokens, payload) 統一
+  - Fix 2 (P0): days.py ソート順修正（happy_score desc → published_at desc）
+  - Fix 3 (P0): EXTERNAL_MODE=real クライアント実装（fetcher_real/llm_real/notifier_real）
+  - Fix 4 (P1): candidates 冪等収集（MD5 hash ID）+ 7日TTL + DB書き戻し（filter/classify）
+  - Fix 5 (P1): publish.py に thumbnail_url・source_url を通す
+  - 新テスト: test_api_days.py（ソート・フォールバック）, test_batch_integration.py（20本/日）
+
 ---
 
 ## 2. マイルストーン進捗
@@ -90,7 +99,7 @@ BE-001~006 は手動作業:
 
 - URL: https://github.com/nobuhiko-ryuu/HappyNews
 - ブランチ: main
-- マージ済み PR: #1〜#9（全完了）
+- マージ済み PR: #1〜#10（全完了）
 
 ---
 
