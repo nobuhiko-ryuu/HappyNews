@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TypedDict
 
 
@@ -7,7 +7,8 @@ from typing import TypedDict
 class NotificationPayload:
     title: str
     body: str
-    day_key: str  # DeepLink用
+    day_key: str
+    deeplink: str = "happynews://today"
 
 
 class MulticastResult(TypedDict):

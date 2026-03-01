@@ -61,7 +61,7 @@ class TestRunNotifyJobWithTargets:
             mock_get_db.return_value = _make_db_mock([doc])
             mock_notifier = AsyncMock()
             mock_notifier.send_multicast.return_value = {
-                "success_count": 1, "failure_count": 0
+                "success": 1, "failure": 0
             }
             mock_get_notifier.return_value = mock_notifier
 
@@ -72,10 +72,10 @@ class TestRunNotifyJobWithTargets:
             assert result["sent"] == 1
             assert result["failed"] == 0
             mock_notifier.send_multicast.assert_called_once()
-            kwargs = mock_notifier.send_multicast.call_args.kwargs
-            assert kwargs["tokens"] == ["token-abc"]
-            assert kwargs["data"]["deeplink"] == "happynews://today"
-            assert kwargs["data"]["day_key"] == "2026-03-01"
+            args = mock_notifier.send_multicast.call_args.args
+            assert args[0] == ["token-abc"]
+            assert args[1].deeplink == "happynews://today"
+            assert args[1].day_key == "2026-03-01"
 
     @pytest.mark.asyncio
     async def test_deeplink_payload(self):
@@ -88,16 +88,16 @@ class TestRunNotifyJobWithTargets:
             mock_get_db.return_value = _make_db_mock([doc])
             mock_notifier = AsyncMock()
             mock_notifier.send_multicast.return_value = {
-                "success_count": 1, "failure_count": 0
+                "success": 1, "failure": 0
             }
             mock_get_notifier.return_value = mock_notifier
 
             from app.notify.job import run_notify_job
             await run_notify_job(hour=9)
 
-            kwargs = mock_notifier.send_multicast.call_args.kwargs
-            assert kwargs["title"] == "ハッピーニュース 🌟"
-            assert "happynews://today" in kwargs["data"]["deeplink"]
+            args = mock_notifier.send_multicast.call_args.args
+            assert args[1].title == "ハッピーニュース 🌟"
+            assert "happynews://today" in args[1].deeplink
 
     @pytest.mark.asyncio
     async def test_send_failure_counted(self):
@@ -107,7 +107,7 @@ class TestRunNotifyJobWithTargets:
         with patch("app.notify.job.get_db") as mock_get_db, \
              patch("app.notify.job.get_notifier") as mock_get_notifier, \
              patch("app.notify.job.today_jst", return_value="2026-03-01"), \
-             patch("asyncio.sleep", new_callable=AsyncMock):  # リトライのsleepをスキップ
+             patch("asyncio.sleep", new_callable=AsyncMock):
             mock_get_db.return_value = _make_db_mock([doc])
             mock_notifier = AsyncMock()
             mock_notifier.send_multicast.side_effect = Exception("FCM error")

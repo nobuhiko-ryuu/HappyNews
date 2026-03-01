@@ -1,7 +1,8 @@
 """BE-033: Collect - RSS/APIソースから候補記事を収集する"""
 from __future__ import annotations
+import hashlib
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any
 from app.ports.fetcher import ArticleFetcher, RawArticle
 from app.db.firestore_client import get_db
@@ -54,15 +55,21 @@ async def collect_candidates(
                 continue
             seen_urls.add(url)
 
+            doc_id = _candidate_doc_id(url, source["_id"])
+            now_utc = datetime.now(timezone.utc)
             candidate = {
+                "_candidate_id": doc_id,
                 "day_key": day_key,
                 "source_id": source["_id"],
                 "source_name": source.get("name", ""),
+                "source_url": source.get("homepage_url", ""),
                 "original_url": url,
                 "title": article.title,
                 "excerpt": article.excerpt[:500] if article.excerpt else "",
                 "published_at": article.published_at.isoformat() if article.published_at else None,
-                "collected_at": datetime.now(timezone.utc).isoformat(),
+                "collected_at": now_utc.isoformat(),
+                "ttl_delete_at": (now_utc + timedelta(days=7)).isoformat(),
+                "thumbnail_url": article.thumbnail_url,
                 "lang": source.get("language_hint", "en"),
                 "rule_filtered": False,
                 "rule_filter_reasons": [],
@@ -76,17 +83,25 @@ async def collect_candidates(
     logger.info(f"Collected {len(collected)} candidates from {len(sources)} sources")
 
     if not dry_run:
-        # Firestore に保存（バッチ書き込み）
+        # Firestore に保存（バッチ書き込み・冪等）
         batch = db.batch()
         for i, c in enumerate(collected):
-            ref = db.collection("candidates").document()
-            batch.set(ref, c)
+            doc_id = c["_candidate_id"]
+            ref = db.collection("candidates").document(doc_id)
+            # _candidate_id はメモリ上の参照用、Firestore フィールドには含めない
+            batch.set(ref, {k: v for k, v in c.items() if k != "_candidate_id"})
             if (i + 1) % 499 == 0:  # Firestore バッチ上限
                 await batch.commit()
                 batch = db.batch()
         await batch.commit()
 
     return collected
+
+
+def _candidate_doc_id(url: str, source_id: str) -> str:
+    """URL + source_id から決定論的な Firestore doc ID を生成（冪等収集）"""
+    key = f"{url}|{source_id}"
+    return hashlib.md5(key.encode()).hexdigest()
 
 
 def _normalize_url(url: str) -> str:
