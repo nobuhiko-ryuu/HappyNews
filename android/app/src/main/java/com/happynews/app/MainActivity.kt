@@ -88,14 +88,16 @@ class MainActivity : ComponentActivity() {
     private fun startAuth() {
         _authState.value = AuthState.Loading
         lifecycleScope.launch {
-            val auth = Firebase.auth
-            if (auth.currentUser != null) {
-                _authState.value = AuthState.Ready
-                return@launch
-            }
-            val result = runCatching { auth.signInAnonymously().await() }
-            _authState.value = if (result.isSuccess) AuthState.Ready else AuthState.Failed
+            ensureAnonymousAuth()
+            _authState.value = if (Firebase.auth.currentUser != null) AuthState.Ready else AuthState.Failed
         }
+    }
+
+    private suspend fun ensureAnonymousAuth() {
+        val auth = Firebase.auth
+        if (auth.currentUser != null) return
+        runCatching { auth.signInAnonymously().await() }
+            .onFailure { android.util.Log.w("MainActivity", "Anonymous sign-in failed: $it") }
     }
 
     private fun handleDeepLink(intent: Intent?) {
