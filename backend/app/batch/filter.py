@@ -16,7 +16,7 @@ def apply_rule_filter(
     ルールベースのフィルタリングを適用。
     rule_filtered=True のものは除外し、理由を記録する。
     """
-    filtered = []
+    result = []
     for c in candidates:
         reasons = []
 
@@ -31,16 +31,19 @@ def apply_rule_filter(
                 reasons.append(f"ng_word:{word}")
                 break
 
+        updated = dict(c)
         if reasons:
-            c = dict(c)
-            c["rule_filtered"] = True
-            c["rule_filter_reasons"] = reasons
-            logger.debug(f"Filtered: {c.get('title', '')[:50]} - {reasons}")
-        filtered.append(c)
+            updated["rule_filtered"] = True
+            updated["rule_filter_reasons"] = reasons
+            logger.debug(f"Filtered: {updated.get('title', '')[:50]} - {reasons}")
+        else:
+            updated["rule_filtered"] = False
+            updated["rule_filter_reasons"] = []
+        result.append(updated)
 
-    passed = [c for c in filtered if not c["rule_filtered"]]
+    passed = [c for c in result if not c["rule_filtered"]]
     logger.info(f"Rule filter: {len(candidates)} -> {len(passed)} passed ({len(candidates) - len(passed)} filtered)")
-    return filtered  # フィルタ済みフラグ付きで全件返す（runs記録用）
+    return result  # フィルタ済みフラグ付きで全件返す（runs記録用）
 
 
 async def write_filter_results(db, candidates: list[dict]) -> None:
