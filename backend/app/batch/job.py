@@ -74,7 +74,8 @@ async def run_batch(
 
         # 3. LLM Classify
         classifier = get_classifier()
-        candidates = await classify_candidates(candidates, classifier, db=db)
+        db_for_write = None if dry_run else db
+        candidates = await classify_candidates(candidates, classifier, db=db_for_write)
         run_record["counts"]["classified"] = len([c for c in candidates if not c.get("rule_filtered")])
 
         # 3b. LLM後 ng_categories フィルタ

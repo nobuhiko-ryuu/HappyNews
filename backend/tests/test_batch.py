@@ -49,6 +49,21 @@ class TestRuleFilter:
         result = apply_rule_filter(candidates, ng_words=[], ng_source_ids=[], ng_categories=[])
         assert all(not c["rule_filtered"] for c in result)
 
+    def test_returns_all_candidates(self):
+        """件数保持テスト: 入力2件 → 戻り値2件、片方のみ rule_filtered=True"""
+        candidates = [
+            make_candidate("Happy science news"),
+            make_candidate("Violence and disaster report"),
+        ]
+        result = apply_rule_filter(
+            candidates, ng_words=["violence"], ng_source_ids=[], ng_categories=[]
+        )
+        assert len(result) == 2
+        assert result[0]["rule_filtered"] is False
+        assert result[1]["rule_filtered"] is True
+        assert "rule_filter_reasons" in result[0]
+        assert "rule_filter_reasons" in result[1]
+
 
 class TestRankAndSelect:
     def test_selects_top_n_by_score(self):

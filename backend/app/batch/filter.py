@@ -1,7 +1,6 @@
 """BE-036: Rule Filter - NGワード/NGソース/NGカテゴリでフィルタリング"""
 from __future__ import annotations
 import logging
-import re
 
 logger = logging.getLogger("happynews.batch.filter")
 
@@ -14,17 +13,15 @@ def apply_rule_filter(
 ) -> list[dict]:
     """
     ルールベースのフィルタリングを適用。
-    rule_filtered=True のものは除外し、理由を記録する。
+    入力と同件数を返す。各候補に rule_filtered と rule_filter_reasons を付ける。
     """
     result = []
     for c in candidates:
         reasons = []
 
-        # NGソース
         if c.get("source_id") in ng_source_ids:
             reasons.append(f"ng_source:{c['source_id']}")
 
-        # NGワード（タイトル + 抜粋）
         text = f"{c.get('title', '')} {c.get('excerpt', '')}".lower()
         for word in ng_words:
             if word.lower() in text:
@@ -35,15 +32,18 @@ def apply_rule_filter(
         if reasons:
             updated["rule_filtered"] = True
             updated["rule_filter_reasons"] = reasons
-            logger.debug(f"Filtered: {updated.get('title', '')[:50]} - {reasons}")
         else:
             updated["rule_filtered"] = False
             updated["rule_filter_reasons"] = []
+
         result.append(updated)
 
-    passed = [c for c in result if not c["rule_filtered"]]
-    logger.info(f"Rule filter: {len(candidates)} -> {len(passed)} passed ({len(candidates) - len(passed)} filtered)")
-    return result  # フィルタ済みフラグ付きで全件返す（runs記録用）
+    passed = [x for x in result if not x.get("rule_filtered")]
+    logger.info(
+        f"Rule filter: {len(candidates)} -> {len(passed)} passed "
+        f"({len(candidates) - len(passed)} filtered)"
+    )
+    return result
 
 
 async def write_filter_results(db, candidates: list[dict]) -> None:
