@@ -40,9 +40,9 @@ async def publish_articles(
             "title": article.get("title", ""),
             "summary_3lines": article.get("summary_3lines", ""),
             "source_name": article.get("source_name", ""),
-            "source_url": "",
+            "source_url": article.get("source_url", ""),
             "original_url": article.get("original_url", ""),
-            "thumbnail_url": None,  # MVP: 外部直リンクは将来対応
+            "thumbnail_url": article.get("thumbnail_url"),
             "published_at": article.get("published_at") or now,
             "collected_at": article.get("collected_at", now),
             "tags": article.get("llm_tags", []),

@@ -7,7 +7,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from app.batch.collect import collect_candidates
-from app.batch.filter import apply_rule_filter
+from app.batch.filter import apply_rule_filter, write_filter_results
 from app.batch.classify import classify_candidates
 from app.batch.rank import rank_and_select
 from app.batch.summarize import summarize_articles
@@ -69,10 +69,12 @@ async def run_batch(
         candidates = apply_rule_filter(candidates, ng_words, ng_source_ids, ng_categories)
         passed = [c for c in candidates if not c.get("rule_filtered")]
         run_record["counts"]["after_rule_filter"] = len(passed)
+        if not dry_run:
+            await write_filter_results(db, candidates)
 
         # 3. LLM Classify
         classifier = get_classifier()
-        candidates = await classify_candidates(candidates, classifier)
+        candidates = await classify_candidates(candidates, classifier, db=None if dry_run else db)
         run_record["counts"]["classified"] = len([c for c in candidates if not c.get("rule_filtered")])
 
         # 4. Rank & Select

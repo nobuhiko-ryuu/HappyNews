@@ -59,7 +59,8 @@ async def get_articles_by_day(day_key: str):
 
     # ソート: happy_score desc → published_at desc
     articles.sort(
-        key=lambda a: (-float(a.get("happy_score", 0)), a.get("published_at", "")),
+        key=lambda a: (float(a.get("happy_score", 0.0)), a.get("published_at") or ""),
+        reverse=True,
     )
 
     # Cache-Control: 当日は短TTL、過去日は長TTL

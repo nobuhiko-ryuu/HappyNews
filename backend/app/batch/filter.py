@@ -41,3 +41,28 @@ def apply_rule_filter(
     passed = [c for c in filtered if not c["rule_filtered"]]
     logger.info(f"Rule filter: {len(candidates)} -> {len(passed)} passed ({len(candidates) - len(passed)} filtered)")
     return filtered  # フィルタ済みフラグ付きで全件返す（runs記録用）
+
+
+async def write_filter_results(db, candidates: list[dict]) -> None:
+    """フィルタ結果を Firestore candidates に merge 書き込み"""
+    batch = db.batch()
+    count = 0
+    for i, c in enumerate(candidates):
+        candidate_id = c.get("_candidate_id")
+        if not candidate_id:
+            continue
+        ref = db.collection("candidates").document(candidate_id)
+        batch.set(
+            ref,
+            {
+                "rule_filtered": c.get("rule_filtered", False),
+                "rule_filter_reasons": c.get("rule_filter_reasons", []),
+            },
+            merge=True,
+        )
+        count += 1
+        if count % 499 == 0:
+            await batch.commit()
+            batch = db.batch()
+    await batch.commit()
+    logger.info(f"write_filter_results: merged {count} candidates")

@@ -14,6 +14,7 @@ import time
 import uuid
 from datetime import datetime, timezone, timedelta
 from app.container import get_notifier
+from app.ports.notifier import NotificationPayload
 from app.db.firestore_client import get_db
 from app.utils.day_key import today_jst
 
@@ -60,9 +61,12 @@ async def run_notify_job(hour: int | None = None) -> dict:
 
         # BE-053: ペイロード（DeepLink → Today）
         day_key = today_jst()
-        title = "ハッピーニュース 🌟"
-        body = "今日のハッピーニュースが届きました！"
-        data = {"deeplink": "happynews://today", "day_key": day_key}
+        payload = NotificationPayload(
+            title="ハッピーニュース 🌟",
+            body="今日のハッピーニュースが届きました！",
+            day_key=day_key,
+            deeplink="happynews://today",
+        )
 
         # BE-055: バッチ送信 + 軽量リトライ
         sent = 0
@@ -71,14 +75,9 @@ async def run_notify_job(hour: int | None = None) -> dict:
             batch_tokens = tokens[i:i + _BATCH_SIZE]
             for attempt in range(_MAX_RETRY + 1):
                 try:
-                    notify_result = await notifier.send_multicast(
-                        tokens=batch_tokens,
-                        title=title,
-                        body=body,
-                        data=data,
-                    )
-                    sent += notify_result.get("success_count", 0)
-                    failed += notify_result.get("failure_count", 0)
+                    notify_result = await notifier.send_multicast(batch_tokens, payload)
+                    sent += notify_result["success"]
+                    failed += notify_result["failure"]
                     break
                 except Exception as e:
                     if attempt == _MAX_RETRY:

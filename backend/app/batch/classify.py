@@ -12,6 +12,7 @@ _CONCURRENCY = 5  # 同時リクエスト数上限
 async def classify_candidates(
     candidates: list[dict],
     classifier: ArticleClassifier,
+    db=None,
 ) -> list[dict]:
     """
     rule_filtered=False の候補に対して LLM 軽判定を実行。
@@ -31,12 +32,27 @@ async def classify_candidates(
                     language=c.get("lang", "en"),
                 )
                 idx = idx_map[id(c)]
-                results[idx] = dict(c) | {
+                updated = dict(c) | {
                     "llm_happy_score": result.happy_score,
                     "llm_category": result.category,
                     "llm_tags": result.tags,
                     "llm_is_ng": result.is_ng,
                 }
+                results[idx] = updated
+                # Firestore に分類結果を書き戻す
+                if db is not None:
+                    candidate_id = c.get("_candidate_id")
+                    if candidate_id:
+                        ref = db.collection("candidates").document(candidate_id)
+                        await ref.set(
+                            {
+                                "llm_happy_score": result.happy_score,
+                                "llm_category": result.category,
+                                "llm_tags": result.tags,
+                                "llm_is_ng": result.is_ng,
+                            },
+                            merge=True,
+                        )
             except Exception as e:
                 logger.warning(f"Classify failed for '{c.get('title', '')[:40]}': {e}")
 
