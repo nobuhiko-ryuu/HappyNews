@@ -62,8 +62,8 @@ async def run_notify_job(hour: int | None = None) -> dict:
         # BE-053: ペイロード（DeepLink → Today）
         day_key = today_jst()
         payload = NotificationPayload(
-            title="ハッピーニュース 🌟",
-            body="今日のハッピーニュースが届きました！",
+            title="今日のハッピーニュース",
+            body="世界の良い出来事を20本まとめました",
             day_key=day_key,
             deeplink="happynews://today",
         )

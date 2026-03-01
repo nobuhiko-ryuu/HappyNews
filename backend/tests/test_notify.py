@@ -96,7 +96,7 @@ class TestRunNotifyJobWithTargets:
             await run_notify_job(hour=9)
 
             args = mock_notifier.send_multicast.call_args.args
-            assert args[1].title == "ハッピーニュース 🌟"
+            assert args[1].title == "今日のハッピーニュース"
             assert "happynews://today" in args[1].deeplink
 
     @pytest.mark.asyncio
