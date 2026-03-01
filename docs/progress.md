@@ -1,10 +1,10 @@
 # Claude Code 進捗報告（ハッピーニュース / Android）
-最終更新: 2026-03-01（PR #11）
+最終更新: 2026-03-01（PR #12）
 
 ---
 
 ## 0. 今回の報告サマリ（3行）
-- 完了: 全マイルストーン M1〜M6 + Phase 0 + ChatGPT設計レビュー Fix 1-5 + Fix A-F（PR #1〜#11 マージ済み）
+- 完了: 全マイルストーン M1〜M6 + Phase 0 + 設計レビュー Fix 1-5, A-F, Round3（PR #1〜#12 マージ済み）
 - 進行中: なし
 - ブロッカー: なし（GCP基盤 BE-001~006 のみ手動セットアップ必要）
 
@@ -75,6 +75,13 @@
   - Fix E (P1): Firestore TTL datetime 型保存 + 設定手順を ops ドキュメントに追記
   - Fix F (P1): 3行要約の整形ガード（_format_summary: 丸め・補完・banned_phrases 除去）
 
+### 設計レビュー Round3 Fix B-D
+- **PR #12**: fix/review-round3 → merged
+  - Fix A (P0): TTL datetime 型保存は PR #11 で対応済み
+  - Fix B (P0): classify に常に db を渡す（dry_run 条件を削除、candidates 書き戻し確実化）
+  - Fix C (P1): ng_categories を LLM後フィルタとして実装（llm_category in ng_categories → rule_filtered=True）
+  - Fix D (P1): AuthState sealed class 追加、auth 失敗時は Failed 状態で再試行ボタン表示
+
 ---
 
 ## 2. マイルストーン進捗
@@ -108,7 +115,7 @@ BE-001~006 は手動作業:
 
 - URL: https://github.com/nobuhiko-ryuu/HappyNews
 - ブランチ: main
-- マージ済み PR: #1〜#11（全完了）
+- マージ済み PR: #1〜#12（全完了）
 
 ---
 
