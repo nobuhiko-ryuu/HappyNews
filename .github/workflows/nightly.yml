@@ -19,6 +19,9 @@ jobs:
         run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
 
       - name: LLM smoke (real external, limit=20)
+        # 必要な Secrets（GitHub Settings > Secrets and variables > Actions）:
+        #   OPENAI_API_KEY          : OpenAI API キー
+        #   GCP_SA_KEY_PATH         : GCP サービスアカウントキー（JSON）のパス
         env:
           EXTERNAL_MODE: real
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
