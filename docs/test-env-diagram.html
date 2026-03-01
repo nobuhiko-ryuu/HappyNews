@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>HappyNews テスト環境の関係図</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Helvetica Neue', sans-serif; background: #f0f4f8; color: #1a202c; }
+
+  h1 { text-align: center; padding: 28px 0 8px; font-size: 22px; color: #2d3748; }
+  .subtitle { text-align: center; color: #718096; font-size: 14px; margin-bottom: 24px; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* ========== Section titles ========== */
+  .section-label {
+    font-size: 13px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #fff;
+    padding: 5px 14px; border-radius: 20px; display: inline-block; margin-bottom: 14px;
+  }
+
+  /* ========== Cards ========== */
+  .card {
+    border-radius: 12px; padding: 14px 16px; margin: 6px 0;
+    border: 2px solid transparent; position: relative;
+  }
+  .card-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .card-desc  { font-size: 13px; line-height: 1.55; color: #4a5568; }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px; margin-right: 4px; margin-top: 4px;
+  }
+
+  /* ========== Layout grids ========== */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  /* ========== Sections ========== */
+  .section {
+    border-radius: 16px; padding: 20px 20px 18px;
+    margin-bottom: 20px; border: 2px solid transparent;
+  }
+
+  /* ── Colors ── */
+  /* GCP */
+  .s-gcp { background: #ebf8ff; border-color: #90cdf4; }
+  .s-gcp .section-label { background: #3182ce; }
+  .c-gcp { background: #fff; border-color: #63b3ed; }
+
+  /* Firebase */
+  .s-firebase { background: #fffaf0; border-color: #fbd38d; }
+  .s-firebase .section-label { background: #dd6b20; }
+  .c-firebase { background: #fff; border-color: #f6ad55; }
+
+  /* Docker */
+  .s-docker { background: #e6fffa; border-color: #81e6d9; }
+  .s-docker .section-label { background: #2c7a7b; }
+  .c-docker { background: #fff; border-color: #4fd1c5; }
+
+  /* Test levels */
+  .s-test { background: #faf5ff; border-color: #d6bcfa; }
+  .s-test .section-label { background: #6b46c1; }
+  .c-t1 { background: #f0fff4; border-color: #68d391; }
+  .c-t2 { background: #fffaf0; border-color: #fbd38d; }
+  .c-t3 { background: #fff5f5; border-color: #fc8181; }
+
+  /* Arrow */
+  .arrow-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0; }
+  .arrow { font-size: 28px; color: #a0aec0; }
+  .arrow-label { font-size: 12px; color: #718096; }
+
+  /* Tag badges */
+  .tag-gcp    { background: #bee3f8; color: #2b6cb0; }
+  .tag-fb     { background: #feebc8; color: #c05621; }
+  .tag-docker { background: #b2f5ea; color: #234e52; }
+  .tag-stub   { background: #c6f6d5; color: #276749; }
+  .tag-emu    { background: #fefcbf; color: #744210; }
+  .tag-real   { background: #fed7d7; color: #9b2c2c; }
+
+  /* Emoji icons */
+  .icon { font-size: 20px; margin-right: 6px; vertical-align: middle; }
+
+  /* Key question box */
+  .key-box {
+    background: #fff; border-radius: 12px; padding: 16px 20px;
+    border-left: 5px solid #6b46c1; margin-top: 10px;
+    font-size: 14px; line-height: 1.7; color: #2d3748;
+  }
+  .key-box strong { color: #6b46c1; }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+  .flow-box {
+    background: #fff; border: 2px solid #e2e8f0; border-radius: 8px;
+    padding: 6px 12px; font-size: 13px; font-weight: 600;
+  }
+  .flow-arrow { font-size: 18px; color: #a0aec0; }
+
+  hr.divider { border: none; border-top: 2px dashed #cbd5e0; margin: 24px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>🗺️ HappyNews テスト環境の関係図</h1>
+  <p class="subtitle">Google Cloud / Firebase / Docker の役割と、テストの「レベル」を整理した地図</p>
+
+  <!-- ===================== PART 1: 本番の構成 ===================== -->
+  <hr class="divider">
+  <h2 style="font-size:17px;margin-bottom:16px;color:#4a5568;">📦 Part 1 ── 本番アプリはどう動いているか？</h2>
+
+  <!-- Docker -->
+  <div class="section s-docker">
+    <span class="section-label">🐳 Docker（コンテナ）</span>
+    <p style="font-size:13px;color:#4a5568;margin-bottom:12px;">
+      <strong>「お弁当箱」</strong>のようなもの。アプリと必要なライブラリをひとまとめに詰め込んで、<br>
+      どのパソコンやサーバーでも同じように動かせる技術。
+    </p>
+    <div class="grid2">
+      <div class="card c-docker">
+        <div class="card-title"><span class="icon">📄</span>Dockerfile</div>
+        <div class="card-desc">「お弁当の作り方レシピ」。<br>Python のインストール・コードのコピーなど、手順が書いてある。</div>
+      </div>
+      <div class="card c-docker">
+        <div class="card-title"><span class="icon">🖼️</span>Docker イメージ / コンテナ</div>
+        <div class="card-desc">レシピを使って作った「お弁当」= イメージ。<br>それを実際に開けて食べている状態 = コンテナ（実行中）。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><span class="arrow">⬇️</span><span class="arrow-label">Docker コンテナが動く場所</span></div>
+
+  <!-- GCP -->
+  <div class="section s-gcp">
+    <span class="section-label">☁️ Google Cloud Platform（GCP）</span>
+    <p style="font-size:13px;color:#4a5568;margin-bottom:12px;">
+      <strong>「Googleが持っている超巨大なコンピュータ貸し出しサービス」</strong>。<br>
+      サーバーを自分で買わなくても、必要なぶんだけ借りて使える。
+    </p>
+    <div class="grid4">
+      <div class="card c-gcp">
+        <div class="card-title"><span class="icon">🏃</span>Cloud Run</div>
+        <div class="card-desc">Docker コンテナを<br>クラウドで走らせる場所。<br>バックエンド API がここで動く。</div>
+        <span class="badge tag-docker">Docker必須</span>
+      </div>
+      <div class="card c-gcp">
+        <div class="card-title"><span class="icon">🗄️</span>Firestore</div>
+        <div class="card-desc">Google の NoSQL データベース。<br>記事・ユーザー・設定などを保存する「引き出し」。</div>
+        <span class="badge tag-gcp">DB</span>
+      </div>
+      <div class="card c-gcp">
+        <div class="card-title"><span class="icon">⏰</span>Cloud Scheduler</div>
+        <div class="card-desc">「毎朝6時に自動実行」などを設定できる。日次バッチのタイマー役。</div>
+        <span class="badge tag-gcp">定期実行</span>
+      </div>
+      <div class="card c-gcp">
+        <div class="card-title"><span class="icon">🔑</span>Secret Manager</div>
+        <div class="card-desc">APIキーなど秘密の情報を安全に保管する金庫。</div>
+        <span class="badge tag-gcp">セキュリティ</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><span class="arrow">⬇️</span><span class="arrow-label">Firebase は GCP の上に乗っている</span></div>
+
+  <!-- Firebase -->
+  <div class="section s-firebase">
+    <span class="section-label">🔥 Firebase（GCP の上に乗っているサービス群）</span>
+    <p style="font-size:13px;color:#4a5568;margin-bottom:12px;">
+      <strong>Firebase は GCP の子供</strong>。「モバイルアプリ向けに使いやすくした GCP のセット」。<br>
+      Firestore は Firebase でも GCP でも使える（同じもの！）。
+    </p>
+    <div class="grid3">
+      <div class="card c-firebase">
+        <div class="card-title"><span class="icon">👤</span>Firebase Authentication</div>
+        <div class="card-desc">ユーザーログインの仕組み。<br>HappyNews では「匿名ログイン」を使っている（インストールだけで使える）。</div>
+        <span class="badge tag-fb">Android連携</span>
+      </div>
+      <div class="card c-firebase">
+        <div class="card-title"><span class="icon">📬</span>FCM（Firebase Cloud Messaging）</div>
+        <div class="card-desc">Android への「プッシュ通知」を送る仕組み。<br>「今日のハッピーニュース届きました」の通知はここ経由。</div>
+        <span class="badge tag-fb">プッシュ通知</span>
+      </div>
+      <div class="card c-firebase">
+        <div class="card-title"><span class="icon">🗄️</span>Firestore（再掲）</div>
+        <div class="card-desc">Firebase 経由でも GCP 経由でも<strong>同じデータベース</strong>にアクセスできる。Android も Backend も同じ DB を使う。</div>
+        <span class="badge tag-fb">GCPと同じ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PART 2: テストの3レベル ===================== -->
+  <hr class="divider">
+  <h2 style="font-size:17px;margin-bottom:16px;color:#4a5568;">🧪 Part 2 ── テストには「3つのレベル」がある</h2>
+
+  <div class="key-box">
+    テストは「本物を使うほど信頼度は上がるが、コスト・時間・準備が増える」というトレードオフがある。<br>
+    HappyNews では <strong>普段は外部ゼロ（速い・無料）</strong>、夜だけ本物（信頼度チェック）という戦略。
+  </div>
+
+  <div style="margin-top:18px;" class="section s-test">
+    <span class="section-label">🧪 テストの3レベル</span>
+
+    <!-- Level 1 -->
+    <div class="card c-t1" style="margin-bottom:10px;">
+      <div class="card-title">
+        <span class="icon">🟢</span>レベル1 ── ユニットテスト / スタブテスト
+        <span class="badge tag-stub">外部ゼロ</span><span class="badge" style="background:#c6f6d5;color:#276749;">CI毎PR実行</span>
+      </div>
+      <div class="flow" style="margin:8px 0;">
+        <div class="flow-box">テストコード</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box" style="border-color:#68d391;">スタブ（偽物の外部）</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">結果確認</div>
+      </div>
+      <div class="card-desc">
+        <strong>スタブ</strong>＝本物のAPIや DB の代わりに「常に決まった答えを返す偽物」。<br>
+        インターネット不要・お金かからない・一瞬で終わる。<br>
+        <em>例：test_batch.py, test_notify.py（EXTERNAL_MODE=stub）</em>
+      </div>
+    </div>
+
+    <!-- Level 2 -->
+    <div class="card c-t2" style="margin-bottom:10px;">
+      <div class="card-title">
+        <span class="icon">🟡</span>レベル2 ── エミュレーターテスト
+        <span class="badge tag-emu">Emulator必要</span><span class="badge" style="background:#fefcbf;color:#744210;">ローカルのみ</span>
+      </div>
+      <div class="flow" style="margin:8px 0;">
+        <div class="flow-box">テストコード</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box" style="border-color:#f6ad55;">Firestore Emulator<br>（localhost:8080）</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">結果確認</div>
+      </div>
+      <div class="card-desc">
+        <strong>Firestore Emulator</strong>＝「本物の Firestore を自分のパソコンの中で再現したもの」。<br>
+        本物と同じ動きをするが、お金はかからず、データも本番に影響しない。<br>
+        Docker で起動するか、Firebase CLI（<code>firebase emulators:start</code>）で起動する。<br>
+        <em>例：test_api_emulator.py（nightly/ フォルダ）→ CI では --ignore で除外中</em>
+      </div>
+    </div>
+
+    <!-- Level 3 -->
+    <div class="card c-t3">
+      <div class="card-title">
+        <span class="icon">🔴</span>レベル3 ── 本物GCPテスト（ナイトリー）
+        <span class="badge tag-real">実費あり</span><span class="badge" style="background:#fed7d7;color:#9b2c2c;">毎夜JST05:00</span>
+      </div>
+      <div class="flow" style="margin:8px 0;">
+        <div class="flow-box">テストコード</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box" style="border-color:#fc8181;">本物 GCP<br>Firestore / OpenAI</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">結果確認</div>
+      </div>
+      <div class="card-desc">
+        本物のクラウドと本物のAIを使って動かす「最終チェック」。<br>
+        OpenAI APIキー・GCPの認証情報が必要（GitHub Secrets に登録）。<br>
+        失敗しても CI を落とさない（<code>|| true</code>）のは、ネットワーク障害など外部要因のブレがあるため。<br>
+        <em>例：nightly.yml が毎夜自動実行（EXTERNAL_MODE=real）</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PART 3: Firestore Emulator の起動方法 ===================== -->
+  <hr class="divider">
+  <h2 style="font-size:17px;margin-bottom:16px;color:#4a5568;">🚀 Part 3 ── Firestore Emulator をどうやって起動するか？</h2>
+
+  <div class="grid2">
+    <div class="section s-firebase" style="margin-bottom:0;">
+      <span class="section-label">方法A：Firebase CLI</span>
+      <div class="card c-firebase">
+        <div class="card-title">Node.js + Firebase CLI を使う</div>
+        <div class="card-desc">
+          <pre style="background:#fffaf0;padding:10px;border-radius:8px;font-size:12px;overflow:auto;">
+# インストール（一度だけ）
+npm install -g firebase-tools
+
+# emulator 起動
+firebase emulators:start \
+  --only firestore \
+  --project demo-happynews</pre>
+          これだけで <code>localhost:8080</code> に Firestore が立ち上がる。
+        </div>
+      </div>
+    </div>
+
+    <div class="section s-docker" style="margin-bottom:0;">
+      <span class="section-label">方法B：Docker Compose</span>
+      <div class="card c-docker">
+        <div class="card-title">Docker だけで完結させる</div>
+        <div class="card-desc">
+          <pre style="background:#e6fffa;padding:10px;border-radius:8px;font-size:12px;overflow:auto;">
+# docker-compose.yml に書けば
+# docker compose up だけで起動できる
+
+services:
+  firestore-emulator:
+    image: gcr.io/google.com/cloudsdktool/...
+    ports:
+      - "8080:8080"</pre>
+          Node.js 不要・CI との親和性が高い。<br>今後 CI に組み込むならこちらが便利。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PART 4: 全体俯瞰 ===================== -->
+  <hr class="divider">
+  <h2 style="font-size:17px;margin-bottom:16px;color:#4a5568;">🗾 Part 4 ── 全部まとめた俯瞰図</h2>
+
+  <div style="background:#fff;border-radius:16px;padding:24px;border:2px solid #e2e8f0;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+
+      <!-- 自分のPC -->
+      <div style="flex:1;min-width:220px;background:#f7fafc;border:2px dashed #a0aec0;border-radius:12px;padding:14px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">💻 自分のPC（開発・テスト）</div>
+        <div class="flow-box" style="margin:6px 0;width:100%;text-align:center;">Python コード</div>
+        <div class="flow-arrow" style="display:block;text-align:center;">↕️</div>
+        <div class="flow-box" style="margin:6px 0;width:100%;text-align:center;border-color:#68d391;background:#f0fff4;">スタブ（偽物）<br><small>レベル1テスト</small></div>
+        <div class="flow-arrow" style="display:block;text-align:center;">↕️</div>
+        <div class="flow-box" style="margin:6px 0;width:100%;text-align:center;border-color:#f6ad55;background:#fffaf0;">Firestore Emulator<br><small>レベル2テスト</small></div>
+        <div style="font-size:11px;color:#718096;margin-top:8px;text-align:center;">Firebase CLI or Docker で起動</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 0;">
+        <span style="font-size:24px;">🔀</span>
+        <span style="font-size:11px;color:#718096;">push</span>
+      </div>
+
+      <!-- GitHub Actions -->
+      <div style="flex:1;min-width:220px;background:#f7fafc;border:2px dashed #a0aec0;border-radius:12px;padding:14px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">⚙️ GitHub Actions（CI）</div>
+        <div class="flow-box" style="margin:6px 0;width:100%;text-align:center;border-color:#68d391;background:#f0fff4;">backend pytest<br>--ignore=tests/nightly<br><small>レベル1テスト ✅</small></div>
+        <div class="flow-arrow" style="display:block;text-align:center;">+</div>
+        <div class="flow-box" style="margin:6px 0;width:100%;text-align:center;border-color:#4fd1c5;background:#e6fffa;">Android build<br>./gradlew assembleDebug<br><small>コンパイル確認 ✅</small></div>
+        <div style="font-size:11px;color:#718096;margin-top:8px;text-align:center;">毎PR・毎push で自動実行</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 0;">
+        <span style="font-size:24px;">🌙</span>
+        <span style="font-size:11px;color:#718096;">毎夜</span>
+      </div>
+
+      <!-- Nightly -->
+      <div style="flex:1;min-width:220px;background:#fff5f5;border:2px dashed #fc8181;border-radius:12px;padding:14px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">🌙 Nightly（毎夜 JST05:00）</div>
+        <div class="flow-box" style="margin:6px 0;width:100%;text-align:center;border-color:#fc8181;background:#fff5f5;">EXTERNAL_MODE=real<br>本物 OpenAI + GCP<br><small>レベル3テスト</small></div>
+        <div class="flow-arrow" style="display:block;text-align:center;">↕️</div>
+        <div style="background:#fff;border:2px solid #90cdf4;border-radius:8px;padding:8px;text-align:center;font-size:13px;">
+          ☁️ 本物 GCP<br>
+          🗄️ Firestore<br>
+          🤖 OpenAI API
+        </div>
+        <div style="font-size:11px;color:#718096;margin-top:8px;text-align:center;">失敗しても CI は落とさない (|| true)</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== まとめ ===================== -->
+  <hr class="divider">
+  <div class="key-box">
+    <strong>🎯 3行まとめ</strong><br>
+    ① <strong>Docker</strong> ＝アプリを詰め込む「お弁当箱」。Cloud Run（GCP）の上で走る。<br>
+    ② <strong>Firebase</strong> ＝GCPの子供セット。Auth（ログイン）・FCM（通知）・Firestore（DB）をスマホアプリ向けに使いやすくしたもの。<br>
+    ③ <strong>テストのレベル</strong> ＝ スタブ（偽物・速い）→ Emulator（本物に近い・ローカル）→ 本物GCP（最終確認・夜のみ）の3段階で信頼度を積み上げる。
+  </div>
+
+  <p style="text-align:center;font-size:12px;color:#a0aec0;margin-top:20px;">HappyNews テスト環境図 ── 2026-03-01 生成</p>
+</div>
+</body>
+</html>

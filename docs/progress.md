@@ -1,11 +1,11 @@
 # Claude Code 進捗報告（ハッピーニュース / Android）
-最終更新: 2026-03-01（PR #12）
+最終更新: 2026-03-01（PR #17）
 
 ---
 
 ## 0. 今回の報告サマリ（3行）
-- 完了: 全マイルストーン M1〜M6 + Phase 0 + 設計レビュー Fix 1-5, A-F, Round3（PR #1〜#12 マージ済み）
-- 進行中: なし
+- 完了: 全マイルストーン M1〜M6 + Phase 0 + 設計レビュー Fix 1-5, A-F, Round3〜Round7（PR #1〜#17 マージ済み）
+- 進行中: テスト環境構築（Firestore Emulator 導入検討中）
 - ブロッカー: なし（GCP基盤 BE-001~006 のみ手動セットアップ必要）
 
 ---
@@ -82,6 +82,37 @@
   - Fix C (P1): ng_categories を LLM後フィルタとして実装（llm_category in ng_categories → rule_filtered=True）
   - Fix D (P1): AuthState sealed class 追加、auth 失敗時は Failed 状態で再試行ボタン表示
 
+### 設計レビュー Round4 Fix ①②
+- **PR #13**: fix/review-round4 → merged
+  - Fix ①(P0): filter.py — updated=dict(c) で全件コピー、rule_filtered=False/True を明示セット
+  - Fix ②(P0): MainActivity.kt — ensureAnonymousAuth() を独立 suspend fun に抽出、.onFailure ログ追加
+  - Fix ③(P1): collect.py の datetime TTL は PR #11 で対応済み
+  - Fix ④(P1): job.py の ng_categories LLM後フィルタは PR #12 で対応済み
+  - テスト: 33 PASS（dry_run=False で 20本配信確認済み）
+
+### 設計レビュー Round5 Fix ①②③
+- **PR #14**: fix/review-round5 → merged
+  - Fix ①(P0): filter.py — docstring修正、x.get() 使用、未使用 import re 除去
+  - Fix ②(再発防止): test_returns_all_candidates テスト追加（入力2件→戻り2件、flag確認）
+  - Fix ③(P0): job.py — dry_run 時は db_for_write=None を classify に渡す
+
+### 設計レビュー Round6: テスト安定化 + 通知文面統一
+- **PR #15**: fix/review-round6 → merged
+  - test_api.py → backend/tests/nightly/test_api_emulator.py に移動（Emulator前提テストを分離）
+  - CI は --ignore=tests/nightly 済みのため外部ゼロで安定動作
+  - notify/job.py 通知文面を仕様書と統一（「今日のハッピーニュース」「世界の良い出来事を20本まとめました」）
+  - テスト: 34 PASS（pytest tests/ --ignore=tests/nightly）
+
+### 設計レビュー Round7: Android CI 基盤整備
+- **PR #16**: fix/gradle-wrapper → merged
+  - android/ に Gradle Wrapper 一式を追加（gradlew / gradlew.bat / gradle/wrapper/*）
+  - Gradle 8.10.2-all を使用
+  - material-icons-extended 依存追加（Bookmark / BookmarkBorder アイコン未解決を修正）
+  - ローカル確認: ./gradlew testDebugUnitTest → BUILD SUCCESSFUL / ./gradlew assembleDebug → BUILD SUCCESSFUL
+- **PR #17**: fix/ci-gradlew-chmod → merged
+  - CI android-build に `chmod +x android/gradlew` ステップ追加（ZIP展開後の権限落ち対策）
+  - nightly.yml に必要 Secrets（OPENAI_API_KEY / GCP_SA_KEY_PATH）のコメント追記
+
 ---
 
 ## 2. マイルストーン進捗
@@ -94,11 +125,24 @@
 | M3: 日次バッチ 20本/日 | ✅ 完了 | #6 |
 | M4: 通知 + DeepLink | ✅ 完了 | #7, #8 |
 | M5: 監視/アラート + リリース準備 | ✅ 完了 | #9 |
-| M6: CI 完全化 | ✅ 完了 | #9 |
+| M6: CI 完全化 | ✅ 完了 | #9, #17 |
+| 設計レビュー修正（全ラウンド） | ✅ 完了 | #10〜#17 |
 
 ---
 
-## 3. 手動セットアップが必要な項目（GCP基盤）
+## 3. テスト状況
+
+| テストレベル | コマンド | 件数 | 状態 |
+|---|---|---|---|
+| ユニット/スタブ（外部ゼロ） | `pytest tests/ --ignore=tests/nightly` | 34 PASS | ✅ CI で毎PR実行 |
+| Emulator テスト | `pytest tests/nightly/` | 要Emulator起動 | 🔧 ローカルのみ（構築中） |
+| Nightly smoke（本物GCP） | nightly.yml（JST 05:00自動） | 要Secrets | 🌙 夜間自動実行 |
+| Android ユニットテスト | `./gradlew testDebugUnitTest` | BUILD SUCCESSFUL | ✅ CI で毎PR実行 |
+| Android ビルド | `./gradlew assembleDebug` | BUILD SUCCESSFUL | ✅ CI で毎PR実行 |
+
+---
+
+## 4. 手動セットアップが必要な項目（GCP基盤）
 
 BE-001~006 は手動作業:
 1. GCP プロジェクト作成 + 請求有効化
@@ -108,16 +152,20 @@ BE-001~006 は手動作業:
 5. Secret Manager にシークレット登録（OPENAI_API_KEY 等）
 6. Firebase プロジェクト設定 + google-services.json 配置
 7. `gcloud monitoring alert-policies create` で monitoring/*.yaml 適用
+8. GitHub Secrets 登録: `OPENAI_API_KEY` / `GCP_SA_KEY_PATH`（Nightly用）
 
 ---
 
-## 4. GitHub リポジトリ状況
+## 5. GitHub リポジトリ状況
 
 - URL: https://github.com/nobuhiko-ryuu/HappyNews
 - ブランチ: main
-- マージ済み PR: #1〜#12（全完了）
+- マージ済み PR: #1〜#17（全完了）
 
 ---
 
-## 5. Token 使用状況
-現在: 通常範囲内
+## 6. 関連ドキュメント
+
+- `docs/ops/daily_ops.md` — 日次運用手順書
+- `docs/ops/rollback.md` — ロールバック手順書
+- `docs/test-env-diagram.html` — テスト環境関係図（Google Cloud / Firebase / Docker の概念図）
