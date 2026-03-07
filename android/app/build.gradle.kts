@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -21,6 +22,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // E1ローカルテスト用: 自分のPCのLAN内IPに書き換えて使用する
+            // 例: "http://192.168.0.10:8080/"
+            // 手順: docs/test/01_env_setup.md セクション 4-7, 4-10 参照
+            buildConfigField("String", "API_BASE_URL", "\"http://10.20.1.20:8080/\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
