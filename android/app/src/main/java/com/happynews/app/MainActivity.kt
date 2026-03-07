@@ -33,6 +33,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.happynews.app.ui.navigation.HappyNewsNavHost
@@ -88,6 +89,11 @@ class MainActivity : ComponentActivity() {
     private fun startAuth() {
         _authState.value = AuthState.Loading
         lifecycleScope.launch {
+            if (FirebaseApp.getApps(this@MainActivity).isEmpty()) {
+                android.util.Log.e("MainActivity", "FirebaseApp not initialized – google-services.json missing?")
+                _authState.value = AuthState.Failed
+                return@launch
+            }
             ensureAnonymousAuth()
             _authState.value = if (Firebase.auth.currentUser != null) AuthState.Ready else AuthState.Failed
         }
